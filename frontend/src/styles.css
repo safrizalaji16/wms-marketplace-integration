@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #141522;
+  background:
+    radial-gradient(circle at top left, rgba(118, 142, 255, 0.2), transparent 24%),
+    linear-gradient(180deg, #edf2ff 0%, #f7f9ff 42%, #eef3ff 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-[28px] border border-white/70 bg-white/85 shadow-panel backdrop-blur;
+  }
+
+  .status-pill {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+}
