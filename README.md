@@ -307,11 +307,11 @@ JWT_KEY=secret
 JWT_EXP=10
 
 # Marketplace Configuration
-MARKETPLACE_BASE_URL=
-MARKETPLACE_PARTNER_ID=
-MARKETPLACE_PARTNER_KEY=
-MARKETPLACE_SHOP_ID=
-MARKETPLACE_REDIRECT_URL=
+MARKETPLACE_BASE_URL=https://fullstack-technical-test.suksescorp.co.id
+MARKETPLACE_PARTNER_ID=992800
+MARKETPLACE_SHOP_ID=shopee-123
+MARKETPLACE_REDIRECT_URL=https://example.com/callback
+MARKETPLACE_PARTNER_KEY=mock-secret-partner-key
 ```
 
 Notes:
@@ -320,6 +320,10 @@ Notes:
 - without a complete marketplace configuration, sync, logistic channel lookup, OAuth, and ship-to-marketplace flows will not work fully
 
 Run migrations:
+
+```bash
+setup Database Configuration
+```
 
 ```bash
 make migrateup

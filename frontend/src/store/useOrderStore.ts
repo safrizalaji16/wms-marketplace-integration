@@ -16,6 +16,9 @@ export interface OrderFilterState {
   limit: number;
   selectedOrderSn: string | null;
   setSearch: (value: string) => void;
+  setMarketplaceStatuses: (values: MarketplaceStatus[]) => void;
+  setShippingStatuses: (values: ShippingStatus[]) => void;
+  setWmsStatuses: (values: WmsStatus[]) => void;
   toggleMarketplaceStatus: (value: MarketplaceStatus) => void;
   toggleShippingStatus: (value: ShippingStatus) => void;
   toggleWmsStatus: (value: WmsStatus) => void;
@@ -47,6 +50,11 @@ function toggleValue<T>(values: T[], value: T) {
 export const useOrderStore = create<OrderFilterState>((set) => ({
   ...initialState,
   setSearch: (search: string) => set({ search, page: 1 }),
+  setMarketplaceStatuses: (marketplaceStatuses: MarketplaceStatus[]) =>
+    set({ marketplaceStatuses, page: 1 }),
+  setShippingStatuses: (shippingStatuses: ShippingStatus[]) =>
+    set({ shippingStatuses, page: 1 }),
+  setWmsStatuses: (wmsStatuses: WmsStatus[]) => set({ wmsStatuses, page: 1 }),
   toggleMarketplaceStatus: (value: MarketplaceStatus) =>
     set((state: OrderFilterState) => ({
       marketplaceStatuses: toggleValue(state.marketplaceStatuses, value),

@@ -96,6 +96,8 @@ func (o *orderAPI) GetOrders(ctx *fiber.Ctx) error {
 		WMSStatus:         ctx.Query("wms_status"),
 		MarketplaceStatus: ctx.Query("marketplace_status"),
 		ShippingStatus:    ctx.Query("shipping_status"),
+		SortBy:            ctx.Query("sort_by"),
+		SortDir:           ctx.Query("sort_dir"),
 		Page:              parseIntOrDefault(ctx.Query("page"), 1),
 		Limit:             parseIntOrDefault(ctx.Query("limit"), 10),
 	}

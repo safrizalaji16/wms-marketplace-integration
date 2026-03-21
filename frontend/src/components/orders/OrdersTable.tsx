@@ -1,9 +1,53 @@
-import { ChevronLeft, ChevronRight, ChevronsUpDown } from "lucide-react";
-import { formatDate } from "../../lib/utils";
+import { useEffect, useRef, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  Funnel
+} from "lucide-react";
+import { cn, formatDate } from "../../lib/utils";
 import { useOrderStore } from "../../store/useOrderStore";
-import type { Order } from "../../types/order";
+import type {
+  MarketplaceStatus,
+  Order,
+  ShippingStatus,
+  WmsStatus
+} from "../../types/order";
 import { StatusBadge } from "../ui/StatusBadge";
 import type { OrderFilterState } from "../../store/useOrderStore";
+import { FilterPopover } from "../ui/FilterPopover";
+
+const marketplaceStatuses = [
+  "processing",
+  "paid",
+  "shipping",
+  "delivered",
+  "cancelled"
+] as const satisfies readonly MarketplaceStatus[];
+
+const shippingStatuses = [
+  "label_created",
+  "awaiting_pickup",
+  "shipped",
+  "delivered",
+  "cancelled"
+] as const satisfies readonly ShippingStatus[];
+
+const wmsStatuses = [
+  "READY_TO_PICK",
+  "PICKING",
+  "PACKED",
+  "SHIPPED"
+] as const satisfies readonly WmsStatus[];
+
+type ActiveMenu =
+  | "order-sn"
+  | "marketplace"
+  | "shipping"
+  | "wms"
+  | "tracking-number"
+  | "update-at"
+  | null;
 
 export function OrdersTable({
   orders,
@@ -18,11 +62,37 @@ export function OrdersTable({
   total: number;
   totalPages: number;
 }) {
-  const openOrder = useOrderStore(
-    (state: OrderFilterState) => state.openOrder
-  );
+  const popoverRootRef = useRef<HTMLTableSectionElement | null>(null);
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
+  const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null);
+  const [draftMarketplace, setDraftMarketplace] = useState<MarketplaceStatus[]>([]);
+  const [draftShipping, setDraftShipping] = useState<ShippingStatus[]>([]);
+  const [draftWms, setDraftWms] = useState<WmsStatus[]>([]);
+
+  const openOrder = useOrderStore((state: OrderFilterState) => state.openOrder);
   const setPage = useOrderStore((state: OrderFilterState) => state.setPage);
   const setLimit = useOrderStore((state: OrderFilterState) => state.setLimit);
+  const sortDirection = useOrderStore((state: OrderFilterState) => state.sortDirection);
+  const setSortDirection = useOrderStore(
+    (state: OrderFilterState) => state.setSortDirection
+  );
+  const selectedMarketplace = useOrderStore(
+    (state: OrderFilterState) => state.marketplaceStatuses
+  );
+  const selectedShipping = useOrderStore(
+    (state: OrderFilterState) => state.shippingStatuses
+  );
+  const selectedWms = useOrderStore((state: OrderFilterState) => state.wmsStatuses);
+  const setMarketplaceStatuses = useOrderStore(
+    (state: OrderFilterState) => state.setMarketplaceStatuses
+  );
+  const setShippingStatuses = useOrderStore(
+    (state: OrderFilterState) => state.setShippingStatuses
+  );
+  const setWmsStatuses = useOrderStore(
+    (state: OrderFilterState) => state.setWmsStatuses
+  );
+
   const startEntry = total === 0 ? 0 : (page - 1) * limit + 1;
   const endEntry = total === 0 ? 0 : Math.min(page * limit, total);
   const startPage = Math.max(1, Math.min(page - 2, Math.max(totalPages - 4, 1)));
@@ -31,45 +101,286 @@ export function OrdersTable({
     (_, index: number) => startPage + index
   ).filter((pageNumber: number) => pageNumber >= 1 && pageNumber <= totalPages);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        popoverRootRef.current &&
+        !popoverRootRef.current.contains(event.target as Node)
+      ) {
+        setActiveMenu(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function toggleDraftValue<T extends string>(values: T[], value: T) {
+    return values.includes(value)
+      ? values.filter((item: T) => item !== value)
+      : [...values, value];
+  }
+
+  function openMenu(type: Exclude<ActiveMenu, null>) {
+    setActiveMenu((current) => (current === type ? null : type));
+
+    if (type === "marketplace") {
+      setDraftMarketplace(selectedMarketplace);
+    }
+
+    if (type === "shipping") {
+      setDraftShipping(selectedShipping);
+    }
+
+    if (type === "wms") {
+      setDraftWms(selectedWms);
+    }
+  }
+
+  const activeMenuPopover = (() => {
+    if (!activeMenu) {
+      return null;
+    }
+
+    if (activeMenu === "order-sn") {
+      return (
+        <PopoverWrap align="left" className="left-4 top-[72px]">
+          <FilterPopover
+            title="Order SN"
+            sortDirection={sortDirection}
+            onSortChange={setSortDirection}
+            onReset={() => {
+              setSortDirection("desc");
+              setActiveMenu(null);
+            }}
+            onSave={() =>
+              setActiveMenu(null)
+            }
+          />
+        </PopoverWrap>
+      );
+    }
+
+    if (activeMenu === "marketplace") {
+      return (
+        <PopoverWrap align="left" className="left-[170px] top-[72px]">
+          <FilterPopover
+            title="Marketplace Status"
+            values={marketplaceStatuses}
+            selected={draftMarketplace}
+            onToggle={(value) =>
+              setDraftMarketplace((current) => toggleDraftValue(current, value))
+            }
+            sortDirection={sortDirection}
+            onSortChange={setSortDirection}
+            onReset={() => {
+              setDraftMarketplace([]);
+              setSortDirection("desc");
+            }}
+            onSave={() => {
+              setMarketplaceStatuses(draftMarketplace);
+              setActiveMenu(null);
+            }}
+          />
+        </PopoverWrap>
+      );
+    }
+
+    if (activeMenu === "shipping") {
+      return (
+        <PopoverWrap align="left" className="left-[385px] top-[72px]">
+          <FilterPopover
+            title="Shipping Status"
+            values={shippingStatuses}
+            selected={draftShipping}
+            onToggle={(value) =>
+              setDraftShipping((current) => toggleDraftValue(current, value))
+            }
+            sortDirection={sortDirection}
+            onSortChange={setSortDirection}
+            onReset={() => {
+              setDraftShipping([]);
+              setSortDirection("desc");
+            }}
+            onSave={() => {
+              setShippingStatuses(draftShipping);
+              setActiveMenu(null);
+            }}
+          />
+        </PopoverWrap>
+      );
+    }
+
+    if (activeMenu === "wms") {
+      return (
+        <PopoverWrap align="left" className="left-[560px] top-[72px]">
+          <FilterPopover
+            title="WMS Status"
+            values={wmsStatuses}
+            selected={draftWms}
+            onToggle={(value) =>
+              setDraftWms((current) => toggleDraftValue(current, value))
+            }
+            sortDirection={sortDirection}
+            onSortChange={setSortDirection}
+            onReset={() => {
+              setDraftWms([]);
+              setSortDirection("desc");
+            }}
+            onSave={() => {
+              setWmsStatuses(draftWms);
+              setActiveMenu(null);
+            }}
+          />
+        </PopoverWrap>
+      );
+    }
+
+    if (activeMenu === "tracking-number") {
+      return (
+        <PopoverWrap align="right" className="right-[180px] top-[72px]">
+          <FilterPopover
+            title="Tracking Number"
+            sortDirection={sortDirection}
+            onSortChange={setSortDirection}
+            onReset={() => {
+              setSortDirection("desc");
+              setActiveMenu(null);
+            }}
+            onSave={() => setActiveMenu(null)}
+          />
+        </PopoverWrap>
+      );
+    }
+
+    return (
+      <PopoverWrap align="right" className="right-4 top-[72px]">
+        <FilterPopover
+          title="Update At"
+          sortDirection={sortDirection}
+          onSortChange={setSortDirection}
+          onReset={() => {
+            setSortDirection("desc");
+            setActiveMenu(null);
+          }}
+          onSave={() => setActiveMenu(null)}
+        />
+      </PopoverWrap>
+    );
+  })();
+
   return (
-    <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-card">
+    <div
+      ref={tableContainerRef}
+      className="relative overflow-visible rounded-[32px] border border-slate-200 bg-white shadow-card"
+    >
       <div className="overflow-x-auto">
         <table className="min-w-full text-left">
-          <thead className="border-b border-slate-200 bg-slate-50/80">
+          <thead
+            ref={popoverRootRef}
+            className="border-b border-slate-200 bg-slate-50/80"
+          >
             <tr className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-              {["Order SN", "Marketplace Status", "Shipping Status", "WMS Status", "Tracking Number", "Update At", "Action"].map((label: string) => (
-                <th key={label} className="px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <span>{label}</span>
-                    {label !== "Action" ? <ChevronsUpDown size={14} /> : null}
-                  </div>
-                </th>
-              ))}
+              <th className="relative px-4 py-4">
+                <HeaderButton
+                  label="Order SN"
+                  onClick={() => openMenu("order-sn")}
+                  icon="sort"
+                />
+              </th>
+              <th className="relative px-4 py-4">
+                <HeaderButton
+                  label="Marketplace Status"
+                  onClick={() => openMenu("marketplace")}
+                  icon="filter"
+                  active={selectedMarketplace.length > 0}
+                />
+              </th>
+              <th className="relative px-4 py-4">
+                <HeaderButton
+                  label="Shipping Status"
+                  onClick={() => openMenu("shipping")}
+                  icon="filter"
+                  active={selectedShipping.length > 0}
+                />
+              </th>
+              <th className="relative px-4 py-4">
+                <HeaderButton
+                  label="WMS Status"
+                  onClick={() => openMenu("wms")}
+                  icon="filter"
+                  active={selectedWms.length > 0}
+                />
+              </th>
+              <th className="relative px-4 py-4">
+                <HeaderButton
+                  label="Tracking Number"
+                  onClick={() => openMenu("tracking-number")}
+                  icon="sort"
+                />
+              </th>
+              <th className="relative px-4 py-4">
+                <HeaderButton
+                  label="Update At"
+                  onClick={() => openMenu("update-at")}
+                  icon="sort"
+                />
+              </th>
+              <th className="px-4 py-4">
+                <div className="flex items-center gap-2">
+                  <span>Action</span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((order: Order) => (
-              <tr key={order.order_sn} className="border-b border-slate-100 text-sm text-slate-600 transition hover:bg-primary-50/40">
-                <td className="px-4 py-4 font-semibold text-slate-700">{order.order_sn}</td>
-                <td className="px-4 py-4"><StatusBadge value={order.marketplace_status} /></td>
-                <td className="px-4 py-4"><StatusBadge value={order.shipping_status} /></td>
-                <td className="px-4 py-4"><StatusBadge value={order.wms_status} /></td>
-                <td className="px-4 py-4">{order.tracking_number ?? "-"}</td>
-                <td className="px-4 py-4">{formatDate(order.updated_at)}</td>
-                <td className="px-4 py-4">
-                  <button
-                    type="button"
-                    onClick={() => openOrder(order.order_sn)}
-                    className="rounded-2xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary-500/20 transition hover:bg-primary-700"
-                  >
-                    Detail
-                  </button>
+            {orders.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-6 py-16">
+                  <div className="flex min-h-56 flex-col items-center justify-center rounded-[28px] border border-dashed border-slate-200 bg-slate-50/70 text-center">
+                    <p className="text-lg font-bold text-slate-700">No orders found</p>
+                    <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+                      There are no outbound orders matching your current search or filters.
+                      Try clearing some filters or changing the keyword.
+                    </p>
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              orders.map((order: Order) => (
+                <tr
+                  key={order.order_sn}
+                  className="border-b border-slate-100 text-sm text-slate-600 transition hover:bg-primary-50/40"
+                >
+                  <td className="px-4 py-4 font-semibold text-slate-700">{order.order_sn}</td>
+                  <td className="px-4 py-4">
+                    <StatusBadge value={order.marketplace_status} />
+                  </td>
+                  <td className="px-4 py-4">
+                    <StatusBadge value={order.shipping_status} />
+                  </td>
+                  <td className="px-4 py-4">
+                    <StatusBadge value={order.wms_status} />
+                  </td>
+                  <td className="px-4 py-4">{order.tracking_number ?? "-"}</td>
+                  <td className="px-4 py-4">{formatDate(order.updated_at)}</td>
+                  <td className="px-4 py-4">
+                    <button
+                      type="button"
+                      onClick={() => openOrder(order.order_sn)}
+                      className="rounded-2xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary-500/20 transition hover:bg-primary-700"
+                    >
+                      Detail
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {activeMenuPopover}
 
       <div className="flex flex-col gap-3 px-4 py-4 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -107,11 +418,10 @@ export function OrdersTable({
               key={pageNumber}
               type="button"
               onClick={() => setPage(pageNumber)}
-              className={`h-9 w-9 rounded-xl border text-sm font-semibold ${
-                pageNumber === page
-                  ? "border-primary-300 bg-primary-50 text-primary-700"
-                  : "border-slate-200 text-slate-500"
-              }`}
+              className={`h-9 w-9 rounded-xl border text-sm font-semibold ${pageNumber === page
+                ? "border-primary-300 bg-primary-50 text-primary-700"
+                : "border-slate-200 text-slate-500"
+                }`}
             >
               {pageNumber}
             </button>
@@ -126,6 +436,58 @@ export function OrdersTable({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PopoverWrap({
+  children,
+  align,
+  className
+}: {
+  children: React.ReactNode;
+  align: "left" | "right";
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "absolute z-30 w-80",
+        align === "right" ? "right-0" : "left-0",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function HeaderButton({
+  label,
+  onClick,
+  icon,
+  active
+}: {
+  label: string;
+  onClick: () => void;
+  icon: "sort" | "filter";
+  active?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span>{label}</span>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "rounded-lg p-1 transition",
+          active
+            ? "bg-primary-50 text-primary-600"
+            : "text-slate-400 hover:bg-slate-100 hover:text-primary-600"
+        )}
+      >
+        {icon === "filter" ? <Funnel size={14} /> : <ChevronsUpDown size={14} />}
+      </button>
     </div>
   );
 }

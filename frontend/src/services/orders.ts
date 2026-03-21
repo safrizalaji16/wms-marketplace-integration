@@ -38,7 +38,7 @@ function normalizeOrderDetail(order: OrderDetailApi): Order {
     created_at: "",
     updated_at: "",
     raw_marketplace_payload: {},
-    items: order.items.map((item: OrderItemApi) => ({
+    items: (order.items ?? []).map((item: OrderItemApi) => ({
       sku: item.sku,
       quantity: item.quantity,
       price: item.price
@@ -87,7 +87,7 @@ export async function getOrders(params: {
     `${ordersApiUrl}?${query.toString()}`
   );
   return {
-    orders: data.orders.map(normalizeOrderListItem),
+    orders: (data.orders ?? []).map(normalizeOrderListItem),
     page: data.page,
     limit: data.limit,
     total: data.total,

@@ -15,6 +15,8 @@ type OrderFilter struct {
 	WMSStatus         string `json:"wms_status"`
 	MarketplaceStatus string `json:"marketplace_status"`
 	ShippingStatus    string `json:"shipping_status"`
+	SortBy            string `json:"sort_by"`
+	SortDir           string `json:"sort_dir"`
 	Page              int    `json:"page"`
 	Limit             int    `json:"limit"`
 	Offset            int    `json:"-"`

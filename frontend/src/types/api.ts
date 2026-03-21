@@ -33,7 +33,7 @@ export interface OrderListItemApi {
 }
 
 export interface OrderListDataApi {
-  orders: OrderListItemApi[];
+  orders: OrderListItemApi[] | null;
   page: number;
   limit: number;
   total: number;
@@ -57,5 +57,5 @@ export interface OrderDetailApi {
   shipping_status: string;
   tracking_number: string;
   total_amount: number;
-  items: OrderItemApi[];
+  items: OrderItemApi[] | null;
 }

@@ -25,7 +25,7 @@ func (o *OrderRepository) Count(ctx context.Context) (int, error) {
 
 func (o *OrderRepository) GetAll(ctx context.Context, filter dto.OrderFilter) ([]domain.Order, int, error) {
 	var orders []domain.Order
-	query := o.db.NewSelect().Model(&orders).Order("updated_at DESC")
+	query := o.db.NewSelect().Model(&orders).Order(buildOrderSort(filter))
 	countQuery := o.db.NewSelect().Model((*domain.Order)(nil))
 
 	applyOrderFilters(query, filter)
@@ -89,6 +89,43 @@ func splitFilterValues(value string) []string {
 	}
 
 	return values
+}
+
+func buildOrderSort(filter dto.OrderFilter) string {
+	column := normalizeSortColumn(filter.SortBy)
+	direction := normalizeSortDirection(filter.SortDir)
+
+	return column + " " + direction
+}
+
+func normalizeSortColumn(value string) string {
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "order_sn":
+		return "order_sn"
+	case "marketplace_status":
+		return "marketplace_status"
+	case "shipping_status":
+		return "shipping_status"
+	case "wms_status":
+		return "wms_status"
+	case "tracking_number":
+		return "tracking_number"
+	case "updated_at":
+		return "updated_at"
+	default:
+		return "updated_at"
+	}
+}
+
+func normalizeSortDirection(value string) string {
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "asc":
+		return "ASC"
+	case "desc":
+		return "DESC"
+	default:
+		return "DESC"
+	}
 }
 
 func (o *OrderRepository) GetByOrderSN(ctx context.Context, orderSN string) (domain.Order, error) {
