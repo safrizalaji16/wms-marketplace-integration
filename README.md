@@ -47,6 +47,7 @@ Frontend responsibilities:
 - filtering and pagination
 - showing allowed actions based on order status
 - disabling actions based on the user role extracted from JWT
+- consuming the real backend API directly for all order and marketplace actions
 
 ## Folder Structure
 
@@ -359,24 +360,24 @@ http://localhost:5173
 
 By default, Vite proxies `/api` requests to `http://localhost:9000`.
 
-### 3. Optional frontend environment
+### 3. Frontend environment
 
-The frontend supports these environment variables:
+The frontend currently supports:
 
 ```env
 VITE_API_BASE_URL=/api
-VITE_USE_MOCK_API=false
 ```
 
 Notes:
 
-- if `VITE_USE_MOCK_API` is not set, the frontend assumes mock mode is enabled
-- to make the frontend use the real backend in this repository, set `VITE_USE_MOCK_API=false`
+- the frontend no longer uses an in-memory mock mode
+- all order reads, detail requests, logistic channel lookups, and order actions now call the backend API directly
+- the default value in [`frontend/.env.example`] points to `/api`
 
 Example:
 
 ```bash
-echo "VITE_USE_MOCK_API=false" > frontend/.env
+echo "VITE_API_BASE_URL=/api" > frontend/.env
 ```
 
 ## Seeded Default Accounts
