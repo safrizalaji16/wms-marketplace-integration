@@ -6,7 +6,7 @@ import type {
   OrderListDataApi,
   OrderListItemApi
 } from "../types/api";
-import type { Order, OrdersResponse, WmsStatus } from "../types/order";
+import type { Order, OrdersResponse, SortDirection, WmsStatus } from "../types/order";
 
 const ordersApiUrl = "/api/orders";
 
@@ -53,6 +53,8 @@ export async function getOrders(params: {
   marketplaceStatuses: Order["marketplace_status"][];
   shippingStatuses: Order["shipping_status"][];
   wmsStatuses: Order["wms_status"][];
+  sortBy: string;
+  sortDir: SortDirection;
 }): Promise<OrdersResponse> {
   const {
     page,
@@ -60,11 +62,15 @@ export async function getOrders(params: {
     search,
     marketplaceStatuses,
     shippingStatuses,
-    wmsStatuses
+    wmsStatuses,
+    sortBy,
+    sortDir
   } = params;
   const query = new URLSearchParams({
     page: String(page),
-    limit: String(limit)
+    limit: String(limit),
+    sort_by: sortBy,
+    sort_dir: sortDir
   });
 
   if (search.trim()) {

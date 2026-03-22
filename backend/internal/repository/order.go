@@ -4,7 +4,9 @@ import (
 	"backend/domain"
 	"backend/dto"
 	"context"
+	"database/sql"
 	"strings"
+	"time"
 
 	"github.com/uptrace/bun"
 )
@@ -155,6 +157,7 @@ func (o *OrderRepository) Create(ctx context.Context, order *domain.Order) (doma
 }
 
 func (o *OrderRepository) Update(ctx context.Context, order *domain.Order) error {
+	order.UpdatedAt = sql.NullTime{Time: time.Now(), Valid: true}
 	_, err := o.db.NewUpdate().
 		Model(order).
 		Where("order_sn = ?", order.OrderSN).

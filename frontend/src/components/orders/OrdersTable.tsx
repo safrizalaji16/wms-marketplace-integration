@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -62,20 +62,18 @@ export function OrdersTable({
   total: number;
   totalPages: number;
 }) {
-  const popoverRootRef = useRef<HTMLTableSectionElement | null>(null);
-  const tableContainerRef = useRef<HTMLDivElement | null>(null);
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null);
   const [draftMarketplace, setDraftMarketplace] = useState<MarketplaceStatus[]>([]);
   const [draftShipping, setDraftShipping] = useState<ShippingStatus[]>([]);
   const [draftWms, setDraftWms] = useState<WmsStatus[]>([]);
+  const [draftSortDir, setDraftSortDir] = useState<"asc" | "desc">("desc");
 
   const openOrder = useOrderStore((state: OrderFilterState) => state.openOrder);
   const setPage = useOrderStore((state: OrderFilterState) => state.setPage);
   const setLimit = useOrderStore((state: OrderFilterState) => state.setLimit);
+  const sortBy = useOrderStore((state: OrderFilterState) => state.sortBy);
   const sortDirection = useOrderStore((state: OrderFilterState) => state.sortDirection);
-  const setSortDirection = useOrderStore(
-    (state: OrderFilterState) => state.setSortDirection
-  );
+  const setSort = useOrderStore((state: OrderFilterState) => state.setSort);
   const selectedMarketplace = useOrderStore(
     (state: OrderFilterState) => state.marketplaceStatuses
   );
@@ -93,6 +91,12 @@ export function OrdersTable({
     (state: OrderFilterState) => state.setWmsStatuses
   );
 
+  useEffect(() => {
+    if (activeMenu) {
+      setDraftSortDir(sortDirection);
+    }
+  }, [activeMenu]);
+
   const startEntry = total === 0 ? 0 : (page - 1) * limit + 1;
   const endEntry = total === 0 ? 0 : Math.min(page * limit, total);
   const startPage = Math.max(1, Math.min(page - 2, Math.max(totalPages - 4, 1)));
@@ -101,19 +105,6 @@ export function OrdersTable({
     (_, index: number) => startPage + index
   ).filter((pageNumber: number) => pageNumber >= 1 && pageNumber <= totalPages);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        popoverRootRef.current &&
-        !popoverRootRef.current.contains(event.target as Node)
-      ) {
-        setActiveMenu(null);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   function toggleDraftValue<T extends string>(values: T[], value: T) {
     return values.includes(value)
@@ -147,15 +138,16 @@ export function OrdersTable({
         <PopoverWrap align="left" className="left-4 top-[72px]">
           <FilterPopover
             title="Order SN"
-            sortDirection={sortDirection}
-            onSortChange={setSortDirection}
+            sortDirection={draftSortDir}
+            onSortChange={setDraftSortDir}
             onReset={() => {
-              setSortDirection("desc");
+              setSort("updated_at", "desc");
               setActiveMenu(null);
             }}
-            onSave={() =>
-              setActiveMenu(null)
-            }
+            onSave={() => {
+              setSort("order_sn", draftSortDir);
+              setActiveMenu(null);
+            }}
           />
         </PopoverWrap>
       );
@@ -171,14 +163,15 @@ export function OrdersTable({
             onToggle={(value) =>
               setDraftMarketplace((current) => toggleDraftValue(current, value))
             }
-            sortDirection={sortDirection}
-            onSortChange={setSortDirection}
+            sortDirection={draftSortDir}
+            onSortChange={setDraftSortDir}
             onReset={() => {
               setDraftMarketplace([]);
-              setSortDirection("desc");
+              setSort("updated_at", "desc");
             }}
             onSave={() => {
               setMarketplaceStatuses(draftMarketplace);
+              setSort("marketplace_status", draftSortDir);
               setActiveMenu(null);
             }}
           />
@@ -196,14 +189,15 @@ export function OrdersTable({
             onToggle={(value) =>
               setDraftShipping((current) => toggleDraftValue(current, value))
             }
-            sortDirection={sortDirection}
-            onSortChange={setSortDirection}
+            sortDirection={draftSortDir}
+            onSortChange={setDraftSortDir}
             onReset={() => {
               setDraftShipping([]);
-              setSortDirection("desc");
+              setSort("updated_at", "desc");
             }}
             onSave={() => {
               setShippingStatuses(draftShipping);
+              setSort("shipping_status", draftSortDir);
               setActiveMenu(null);
             }}
           />
@@ -221,14 +215,15 @@ export function OrdersTable({
             onToggle={(value) =>
               setDraftWms((current) => toggleDraftValue(current, value))
             }
-            sortDirection={sortDirection}
-            onSortChange={setSortDirection}
+            sortDirection={draftSortDir}
+            onSortChange={setDraftSortDir}
             onReset={() => {
               setDraftWms([]);
-              setSortDirection("desc");
+              setSort("updated_at", "desc");
             }}
             onSave={() => {
               setWmsStatuses(draftWms);
+              setSort("wms_status", draftSortDir);
               setActiveMenu(null);
             }}
           />
@@ -241,13 +236,16 @@ export function OrdersTable({
         <PopoverWrap align="right" className="right-[180px] top-[72px]">
           <FilterPopover
             title="Tracking Number"
-            sortDirection={sortDirection}
-            onSortChange={setSortDirection}
+            sortDirection={draftSortDir}
+            onSortChange={setDraftSortDir}
             onReset={() => {
-              setSortDirection("desc");
+              setSort("updated_at", "desc");
               setActiveMenu(null);
             }}
-            onSave={() => setActiveMenu(null)}
+            onSave={() => {
+              setSort("tracking_number", draftSortDir);
+              setActiveMenu(null);
+            }}
           />
         </PopoverWrap>
       );
@@ -257,35 +255,33 @@ export function OrdersTable({
       <PopoverWrap align="right" className="right-4 top-[72px]">
         <FilterPopover
           title="Update At"
-          sortDirection={sortDirection}
-          onSortChange={setSortDirection}
+          sortDirection={draftSortDir}
+          onSortChange={setDraftSortDir}
           onReset={() => {
-            setSortDirection("desc");
+            setSort("updated_at", "desc");
             setActiveMenu(null);
           }}
-          onSave={() => setActiveMenu(null)}
+          onSave={() => {
+            setSort("updated_at", draftSortDir);
+            setActiveMenu(null);
+          }}
         />
       </PopoverWrap>
     );
   })();
 
   return (
-    <div
-      ref={tableContainerRef}
-      className="relative overflow-visible rounded-[32px] border border-slate-200 bg-white shadow-card"
-    >
+    <div className="relative overflow-visible rounded-[32px] border border-slate-200 bg-white shadow-card">
       <div className="overflow-x-auto">
         <table className="min-w-full text-left">
-          <thead
-            ref={popoverRootRef}
-            className="border-b border-slate-200 bg-slate-50/80"
-          >
+          <thead className="border-b border-slate-200 bg-slate-50/80">
             <tr className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
               <th className="relative px-4 py-4">
                 <HeaderButton
                   label="Order SN"
                   onClick={() => openMenu("order-sn")}
                   icon="sort"
+                  active={sortBy === "order_sn"}
                 />
               </th>
               <th className="relative px-4 py-4">
@@ -293,7 +289,7 @@ export function OrdersTable({
                   label="Marketplace Status"
                   onClick={() => openMenu("marketplace")}
                   icon="filter"
-                  active={selectedMarketplace.length > 0}
+                  active={selectedMarketplace.length > 0 || sortBy === "marketplace_status"}
                 />
               </th>
               <th className="relative px-4 py-4">
@@ -301,7 +297,7 @@ export function OrdersTable({
                   label="Shipping Status"
                   onClick={() => openMenu("shipping")}
                   icon="filter"
-                  active={selectedShipping.length > 0}
+                  active={selectedShipping.length > 0 || sortBy === "shipping_status"}
                 />
               </th>
               <th className="relative px-4 py-4">
@@ -309,7 +305,7 @@ export function OrdersTable({
                   label="WMS Status"
                   onClick={() => openMenu("wms")}
                   icon="filter"
-                  active={selectedWms.length > 0}
+                  active={selectedWms.length > 0 || sortBy === "wms_status"}
                 />
               </th>
               <th className="relative px-4 py-4">
@@ -317,6 +313,7 @@ export function OrdersTable({
                   label="Tracking Number"
                   onClick={() => openMenu("tracking-number")}
                   icon="sort"
+                  active={sortBy === "tracking_number"}
                 />
               </th>
               <th className="relative px-4 py-4">
@@ -324,6 +321,7 @@ export function OrdersTable({
                   label="Update At"
                   onClick={() => openMenu("update-at")}
                   icon="sort"
+                  active={sortBy === "updated_at"}
                 />
               </th>
               <th className="px-4 py-4">
@@ -380,6 +378,9 @@ export function OrdersTable({
         </table>
       </div>
 
+      {activeMenu && (
+        <div className="fixed inset-0 z-[29]" onClick={() => setActiveMenu(null)} />
+      )}
       {activeMenuPopover}
 
       <div className="flex flex-col gap-3 px-4 py-4 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">

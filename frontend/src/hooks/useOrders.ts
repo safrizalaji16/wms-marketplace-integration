@@ -1,4 +1,4 @@
-import type { Order } from "../types/order";
+import type { Order, SortDirection } from "../types/order";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getLogisticChannels,
@@ -14,7 +14,9 @@ export function useOrders({
   search,
   marketplaceStatuses,
   shippingStatuses,
-  wmsStatuses
+  wmsStatuses,
+  sortBy,
+  sortDirection
 }: {
   enabled?: boolean;
   page: number;
@@ -23,6 +25,8 @@ export function useOrders({
   marketplaceStatuses: Order["marketplace_status"][];
   shippingStatuses: Order["shipping_status"][];
   wmsStatuses: Order["wms_status"][];
+  sortBy: string;
+  sortDirection: SortDirection;
 }) {
   return useQuery({
     queryKey: [
@@ -32,7 +36,9 @@ export function useOrders({
       search,
       marketplaceStatuses,
       shippingStatuses,
-      wmsStatuses
+      wmsStatuses,
+      sortBy,
+      sortDirection
     ],
     queryFn: () =>
       getOrders({
@@ -41,7 +47,9 @@ export function useOrders({
         search,
         marketplaceStatuses,
         shippingStatuses,
-        wmsStatuses
+        wmsStatuses,
+        sortBy,
+        sortDir: sortDirection
       }),
     enabled
   });
