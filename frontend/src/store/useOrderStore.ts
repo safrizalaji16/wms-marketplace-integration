@@ -11,6 +11,7 @@ export interface OrderFilterState {
   marketplaceStatuses: MarketplaceStatus[];
   shippingStatuses: ShippingStatus[];
   wmsStatuses: WmsStatus[];
+  sortBy: string;
   sortDirection: SortDirection;
   page: number;
   limit: number;
@@ -22,7 +23,7 @@ export interface OrderFilterState {
   toggleMarketplaceStatus: (value: MarketplaceStatus) => void;
   toggleShippingStatus: (value: ShippingStatus) => void;
   toggleWmsStatus: (value: WmsStatus) => void;
-  setSortDirection: (value: SortDirection) => void;
+  setSort: (by: string, dir: SortDirection) => void;
   setPage: (value: number) => void;
   setLimit: (value: number) => void;
   resetFilters: () => void;
@@ -35,6 +36,7 @@ const initialState = {
   marketplaceStatuses: [] as MarketplaceStatus[],
   shippingStatuses: [] as ShippingStatus[],
   wmsStatuses: [] as WmsStatus[],
+  sortBy: "updated_at",
   sortDirection: "desc" as SortDirection,
   page: 1,
   limit: 10,
@@ -70,7 +72,7 @@ export const useOrderStore = create<OrderFilterState>((set) => ({
       wmsStatuses: toggleValue(state.wmsStatuses, value),
       page: 1
     })),
-  setSortDirection: (sortDirection: SortDirection) => set({ sortDirection, page: 1 }),
+  setSort: (sortBy: string, sortDirection: SortDirection) => set({ sortBy, sortDirection, page: 1 }),
   setPage: (page: number) => set({ page }),
   setLimit: (limit: number) => set({ limit, page: 1 }),
   resetFilters: () => set(initialState),

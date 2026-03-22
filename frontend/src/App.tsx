@@ -18,6 +18,7 @@ function App() {
     marketplaceStatuses,
     shippingStatuses,
     wmsStatuses,
+    sortBy,
     sortDirection,
     page,
     limit
@@ -29,16 +30,12 @@ function App() {
     search,
     marketplaceStatuses,
     shippingStatuses,
-    wmsStatuses
+    wmsStatuses,
+    sortBy,
+    sortDirection
   });
 
   const orders = data?.orders ?? [];
-  const sortedOrders = orders
-    .sort((left: Order, right: Order) => {
-      const first = new Date(left.updated_at).getTime();
-      const second = new Date(right.updated_at).getTime();
-      return sortDirection === "desc" ? second - first : first - second;
-    });
 
   const cancelledCount = (data?.orders ?? []).filter(
     (order: Order) => order.marketplace_status === "cancelled"
@@ -64,12 +61,12 @@ function App() {
               </p>
             </div>
             <div className="rounded-[28px] border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700">
-              Focused on <span className="font-extrabold">{data?.total ?? sortedOrders.length}</span> visible orders
+              Focused on <span className="font-extrabold">{data?.total ?? orders.length}</span> visible orders
             </div>
           </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <MetricCard label="Total Order" value={`${data?.total ?? sortedOrders.length}`} trend="12% this month" />
+            <MetricCard label="Total Order" value={`${data?.total ?? orders.length}`} trend="12% this month" />
             <MetricCard label="Cancelled" value={`${cancelledCount}`} trend="5% this month" trendDown />
             <MetricCard
               label="Ready To Pick"
@@ -96,10 +93,10 @@ function App() {
               </div>
             ) : (
               <OrdersTable
-                orders={sortedOrders}
+                orders={orders}
                 page={page}
                 limit={limit}
-                total={data?.total ?? sortedOrders.length}
+                total={data?.total ?? orders.length}
                 totalPages={data?.total_pages ?? 1}
               />
             )}
